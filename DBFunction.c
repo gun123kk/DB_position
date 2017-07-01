@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------
-//程式版本:v1.3
-//修改日期:2017/06/19
+//程式版本:v1.5
+//修改日期:2017/06/27
 //是否驗證:yes
 //注意事項
 //v1.1使用函式庫<bcm2835.h>
@@ -13,6 +13,8 @@
 //6.OLED輸出
 //v1.2更新:將距離函式移出double dealDistance(int txPower,double rssi,int pot);
 //v1.3新增函式庫mcp3008.h for lightSensor
+//v1.4OLED新增靠近哪顆IBEACON會顯示near number
+//v1.5修改OLED顯示 NUM AREA nearibeacon
 //-----------------------------------------------------------------------
 #include "DBFunction.h"
 #include <unistd.h>
@@ -282,11 +284,14 @@ void dealOLEDData(oled *info){
 	*/
 	lineEnd=sprintf(buffer," NUM:%d",info->number);
 	OLED_display(buffer,lineEnd,0);	
-	lineEnd=sprintf(buffer," posX:%d",info->posX);
+	lineEnd=sprintf(buffer," area:%d",info->area);
 	OLED_display(buffer,lineEnd,1);		
-	lineEnd=sprintf(buffer," posY:%d",info->posY);
-	OLED_display(buffer,lineEnd,2);		
-	
+	if(info->near==0){
+		lineEnd=sprintf(buffer," near ibeacon:%c%c",'N','o');
+	}else{
+		lineEnd=sprintf(buffer," near ibeacon:%d",info->near);
+	}
+	OLED_display(buffer,lineEnd,2);	
 }
 //-------------------------
 

@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------
-//程式版本:v1.3
-//修改日期:2017/06/19
+//程式版本:v1.5
+//修改日期:2017/06/27
 //是否驗證:yes
 //注意事項
 //v1.1使用函式庫<bcm2835.h>
@@ -13,6 +13,8 @@
 //6.OLED輸出
 //v1.2更新:將距離函式移出double dealDistance(int txPower,double rssi,int pot);
 //v1.3新增函式庫mcp3008.h for lightSensor
+//v1.4OLED新增靠近哪顆IBEACON會顯示near number
+//v1.5修改OLED顯示 NUM AREA nearibeacon
 //-----------------------------------------------------------------------
 
 #ifndef DBFUNCTION_H
@@ -31,8 +33,8 @@ typedef struct LEDBUZ ledBuz;
 
 struct OLED_info{
 	int number;
-	int posX;
-	int posY;
+	int area;
+	int near;
 };
 typedef struct OLED_info oled; 
 

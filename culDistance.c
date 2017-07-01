@@ -1,8 +1,9 @@
 //-----------------------------------------------------------------------
-//程式版本:v1.0
-//修改日期:2017/06/17
+//程式版本:v1.1
+//修改日期:2017/06/22
 //是否驗證:yes
 //計算距離函式
+//新增Kalman Filter
 //-----------------------------------------------------------------------
 #include "culDistance.h"
 
@@ -48,6 +49,29 @@ double dealDistance_DISoffSet(int txPower,double rssi,int pot,float  DISoffest){
 	printf("distance%d:%f\n",pot,distance);
 #endif	
 	return distance;
+}
+//-------------------------
+
+//-------------------------
+//Kalman filter
+//-------------------------
+double kalmanFilter(double inData)
+{
+    float prevData=0;
+    float p=10, q=0.008, r=1, kGain=0;
+    
+    //Kalman filter function start*******************************
+    p = p+q;
+    kGain = p/(p+r);
+    
+    inData = prevData+(kGain*(inData-prevData));
+    
+    p = (1-kGain)*p;
+    
+    prevData = inData;
+    //Kalman filter function stop********************************
+    
+    return inData;
 }
 //-------------------------
 

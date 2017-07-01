@@ -15,22 +15,17 @@
 
 
 //POS* TPosition(double dis1, double dis2, double dis3, double dis4,float areaX,float areaY)
-void TPosition(double dis1, double dis2, double dis3, double dis4,float areaX,float areaY,POS *pxy)
+void TPosition(double dis1, double dis2, double dis3, double dis4,float area[][2],POS *pxy)
 //void TPosition(double dis1, double dis2, double dis3, double dis4)
 {
-    /*
-    int T1[2] = {0 , 0};
-    int T2[2] = {0 , 20};
-    int T3[2] = {30 , 0};
-    int T4[2] = {30 , 20};
-    */
 //    float dis1 = sqrt(pow(17, 2)+pow(21, 2));
 //    float dis2 = sqrt(pow(17, 2)+pow(1, 2));
 //    float dis3 = sqrt(pow(13, 2)+pow(21, 2));
 //    float dis4 = sqrt(pow(13, 2)+pow(1, 2));
     
-    double A[3][2] = { {0,areaY} , {areaX,0} , {areaX,areaY} };
-    //double A[3][2] = { {0,20} , {20,0} , {20,30} };
+    double P[4][2] = { {area[0][0],area[0][1]} , {area[1][0],area[1][1]} , {area[2][0],area[2][1]} , {area[3][0],area[3][1]} };
+//    double A[3][2] = { {0,areaY} , {areaX,0} , {areaX,areaY} };
+    double A[3][2];
     double pos[2];		//0 x,1 y
     double Y[3];
     double B[2][3];
@@ -38,10 +33,19 @@ void TPosition(double dis1, double dis2, double dis3, double dis4,float areaX,fl
     double D[2][2];
     double E[2][3];
     //-----Y矩陣-----
-    Y[0]=pow(dis1,2)-pow(dis2, 2)+pow(A[0][0], 2)+pow(A[0][1], 2);
-    Y[1]=pow(dis1,2)-pow(dis3, 2)+pow(A[1][0], 2)+pow(A[1][1], 2);
-    Y[2]=pow(dis1,2)-pow(dis4, 2)+pow(A[2][0], 2)+pow(A[2][1], 2);
+    Y[0]=pow(dis1,2)-pow(dis2, 2)-pow(P[0][0], 2)+pow(P[1][0], 2)-pow(P[0][1], 2)+pow(P[1][1], 2);
+    Y[1]=pow(dis1,2)-pow(dis3, 2)-pow(P[0][0], 2)+pow(P[2][0], 2)-pow(P[0][1], 2)+pow(P[2][1], 2);
+    Y[2]=pow(dis1,2)-pow(dis4, 2)-pow(P[0][0], 2)+pow(P[3][0], 2)-pow(P[0][1], 2)+pow(P[3][1], 2);
     //--------------
+    
+    //-----P矩陣運算成Ａ-----
+    A[0][0]=P[1][0]-P[0][0];
+    A[1][0]=P[2][0]-P[0][0];
+    A[2][0]=P[3][0]-P[0][0];
+    A[0][1]=P[1][1]-P[0][1];
+    A[1][1]=P[2][1]-P[0][1];
+    A[2][1]=P[3][1]-P[0][1];
+    //-----------------
     
     //-----A矩陣轉置成B-----
     int i,j,k;

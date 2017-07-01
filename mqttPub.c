@@ -7,10 +7,12 @@
  *  GPL v3.0 
  */
 //MQTT publish函式庫
-//程式版本:v1.0
-//修改日期:2017/06/19
+//程式版本:v1.1
+//修改日期:2017/06/27
 //是否驗證:yes
 //注意事項
+//v1.1修改void publishDBData(int num,double posX,double posY,int lightVal)
+//修改為	void publishDBData(int num,int area,int lightVal)
 //-----------------------------------------------------------------------
 #include <errno.h>
 #include <fcntl.h>
@@ -83,10 +85,10 @@ void publishData(char *data){
 //-------------------------
 //MQTT　DB data
 //-------------------------
-void publishDBData(int num,double posX,double posY,int lightVal){	
-	char text[100];		
-	//sprintf (text,"{\"DB%d\":[{\"posX\":%f,\"posY\":%f,\"light\":%d}]}",num,posX,posY,lightVal );	
-    sprintf (text, "{\"num\":%d,\"posX\":%.2f,\"posY\":%.2f,\"light\":%d}",num,posX,posY,lightVal);
+void publishDBData(int num,int area,int lightVal){	
+	char text[100];	
+    //sprintf (text, "{\"num\":%d,\"posX\":%.2f,\"posY\":%.2f,\"light\":%d}",num,posX,posY,lightVal);
+	sprintf (text, "{\"num\":%d,\"area\":%d,\"light\":%d}",num,area,lightVal);
 	publishMessage(text);	
 }
 //-------------------------
@@ -106,7 +108,7 @@ void publishMessage(char *data){
 	//torn down by the operating system before all the network operations
 	//are finished.
 	//usleep(1000);	
-	sleep(1);	
+	//sleep(1);	
 }
 //-------------------------
 
