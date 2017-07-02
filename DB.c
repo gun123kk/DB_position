@@ -1,6 +1,6 @@
 ﻿//-----------------------------------------------------------------------
-//程式版本:v1.9
-//修改日期:2017/06/29
+//程式版本:v2.0
+//修改日期:2017/07/02
 //是否驗證:yes
 //注意事項
 //v1.1新增函式庫 DBFunction.h
@@ -29,6 +29,7 @@
 //|A4	|A5	   |A6
 //|A7	|A8	   |A9
 //i4--------------i3
+//v2.0將目前沒用到的函式庫刪除
 //-----------------------------------------------------------------------
 #include <unistd.h>
 #include <stdio.h>
@@ -137,7 +138,6 @@ double bfRSSI[4];
 //賴捲RSSI處理函式
 //-------------------------
 double avgRSSI(double *rssi , double count);//取平均
-void rssiDataB(int rk,int *count,double *rssi); 
 //-------------------------
 
 //-----------------------------------------------------------------------
@@ -270,14 +270,9 @@ void *threadReadRSSI1(void *arg){
 			//showGetTXPandRSSI(rk,data);			
 		}
 		dealRSSIandTXP(rk,data);
-#if choice
-	//賴捲	
-	rssiDataB(rk,&count,rssi);
 
-#else
-	//俊賢	
 	rssiDataA(rk,&count,rssi,&start);
-#endif
+
 		fclose(in);	
 		usleep(500000);
 		//usleep(100000);
@@ -306,13 +301,9 @@ void *threadReadRSSI2(void *arg){
 			//showGetTXPandRSSI(rk,data);				
 		}	
 		dealRSSIandTXP(rk,data);
-#if choice	
-	//賴捲	
-	rssiDataB(rk,&count,rssi);
-#else
-	//俊賢
+
 	rssiDataA(rk,&count,rssi,&start);	
-#endif
+
 		fclose(in);	
 		usleep(500000);
 		//usleep(100000);
@@ -342,13 +333,9 @@ void *threadReadRSSI3(void *arg){
 			//showGetTXPandRSSI(rk,data);			
 		}
 		dealRSSIandTXP(rk,data);	
-#if choice
-	//賴捲	
-	rssiDataB(rk,&count,rssi);
-#else
-	//俊賢	
+
 	rssiDataA(rk,&count,rssi,&start);	
-#endif		
+		
 		fclose(in);	
 		usleep(500000);	
 		//usleep(100000);
@@ -378,13 +365,9 @@ void *threadReadRSSI4(void *arg){
 			//showGetTXPandRSSI(rk,data);			
 		}
 		dealRSSIandTXP(rk,data);				 
-#if choice	
-	//賴捲	
-	rssiDataB(rk,&count,rssi);
-#else
-	//俊賢	
+	
 	rssiDataA(rk,&count,rssi,&start);	
-#endif		
+	
 		fclose(in);	
 		usleep(500000);	
 		//usleep(100000);
@@ -734,7 +717,7 @@ double avgRSSI(double *rssi , double count)
 //-------------------------
 
 //-------------------------
-//俊賢RSSI取後處理
+//RSSI取後處理
 //-------------------------
 void rssiDataA(int rk,int *count,double *rssi,int *start){
 	int mid;
@@ -791,30 +774,6 @@ void rssiDataA(int rk,int *count,double *rssi,int *start){
 }
 //-------------------------
 
-//-------------------------
-//賴捲RSSI取後處理
-//-------------------------
-void rssiDataB(int rk,int *count,double *rssi){
-    double avg;
-    int cc=*count;
-    if( RSSItemp[rk] != 0 )
-    {
-//        rssi[cc]=kalmanFilter(RSSItemp[rk]);
-        rssi[cc]=RSSItemp[rk];
-//        RSSI[rk]=rssi[cc];//不取平均
-        printf("count%d:%d RSSI:%f RSSItemp:%d\n", rk, cc, rssi[cc], RSSItemp[rk]);
-        cc++;
-        *count = cc % RTQty;
-        
-        
-        avg = avgRSSI(rssi , RTQty); //RSSI取平均
-        RSSI[rk] = avg;
-		printf("RSSI[%d]:%f\n",rk, RSSI[rk]);
-        TXP[rk]= TXPtemp[rk];
-		
-    }
-}
-//-------------------------
 
 //-------------------------
 //RSSI判斷位置處理
