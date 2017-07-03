@@ -30,11 +30,16 @@ struct LEDBUZ{
 	int onOff;
 };
 typedef struct LEDBUZ ledBuz;
-
+/*
 struct OLED_info{
 	int number;
 	int area;
 	int near;
+};*/
+
+struct OLED_info{
+	int number;
+	int rssi[4];
 };
 typedef struct OLED_info oled; 
 

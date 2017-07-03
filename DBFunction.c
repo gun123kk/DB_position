@@ -284,6 +284,14 @@ void dealOLEDData(oled *info){
 	*/
 	lineEnd=sprintf(buffer," NUM:%d",info->number);
 	OLED_display(buffer,lineEnd,0);	
+
+	lineEnd=sprintf(buffer," RI%d:%d,RI%d:%d\n",2,info->rssi[1],1,info->rssi[0]);
+	OLED_display(buffer,lineEnd,1);	
+	lineEnd=sprintf(buffer," RI%d:%d,RI%d:%d\n",4,info->rssi[3],3,info->rssi[2]);
+	OLED_display(buffer,lineEnd,1);	
+	
+	
+	/*
 	lineEnd=sprintf(buffer," area:%d",info->area);
 	OLED_display(buffer,lineEnd,1);		
 	if(info->near==0){
@@ -292,6 +300,7 @@ void dealOLEDData(oled *info){
 		lineEnd=sprintf(buffer," near ibeacon:%d",info->near);
 	}
 	OLED_display(buffer,lineEnd,2);	
+	*/
 }
 //-------------------------
 
