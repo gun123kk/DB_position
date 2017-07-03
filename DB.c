@@ -30,7 +30,10 @@
 //|A7	|A8	   |A9
 //i4--------------i3
 //v2.0將目前沒用到的函式庫刪除
-//chage area size for test
+<<<<<<< HEAD
+=======
+//test change area size
+>>>>>>> DBT
 //-----------------------------------------------------------------------
 #include <unistd.h>
 #include <stdio.h>
