@@ -30,8 +30,7 @@
 //|A7	|A8	   |A9
 //i4--------------i3
 //v2.0將目前沒用到的函式庫刪除
-//test change area size
-//test git
+//test change find area
 //-----------------------------------------------------------------------
 #include <unistd.h>
 #include <stdio.h>
@@ -443,12 +442,22 @@ void *threadLED_Buzzer(void *arg){
 //-------------------------
 void *threadOLED(void *arg){
 	oledInfo.number=DBnumber;
-	oledInfo.area=0;
-	oledInfo.near=nearWhibeacon;
-	dealOLEDData(&oledInfo);
+	oledInfo.rssi[0]=0;
+	oledInfo.rssi[1]=0;
+	oledInfo.rssi[2]=0;
+	oledInfo.rssi[3]=0;
+	//oledInfo.area=0;
+	//oledInfo.near=nearWhibeacon;
+	//dealOLEDData(&oledInfo);
+	int i;
 	while(1){	
-		oledInfo.area=0;		
-		oledInfo.near=nearWhibeacon;
+		//oledInfo.area=0;		
+		//oledInfo.near=nearWhibeacon;
+		if(sureShowRSSI){
+			for(i=0;i<4;i++){
+			oledInfo.rssi[i]=RSSI[i]*100;
+			}
+		}		
 		dealOLEDData(&oledInfo);
 		usleep(50000);			
 	}	
