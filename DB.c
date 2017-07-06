@@ -46,10 +46,10 @@
 #include "mqttPub.h"
 #include "mqttSub.h"
 
-#define path1 "/root/project/position/datalog/BLE1.txt"
-#define path2 "/root/project/position/datalog/BLE2.txt"
-#define path3 "/root/project/position/datalog/BLE3.txt"
-#define path4 "/root/project/position/datalog/BLE4.txt"
+#define path1 "/root/project/DB_position/datalog/BLE1.txt"
+#define path2 "/root/project/DB_position/datalog/BLE2.txt"
+#define path3 "/root/project/DB_position/datalog/BLE3.txt"
+#define path4 "/root/project/DB_position/datalog/BLE4.txt"
 int DBnumber=1;
 
 #define choice 0	 //程式取值方式選擇 1賴捲 0俊賢
@@ -59,6 +59,7 @@ int DBnumber=1;
     #define rssiRang	2		//RSSI 變動幅度容許範圍
 #else
 	//俊賢
+	#define posModeNum	50	//取多個pos
 	#define RTQty	10	//取多個RSSI
 	#define rssiRang	2		//RSSI 變動幅度容許範圍
 	#define DQty	10	//取多個distance
@@ -74,6 +75,7 @@ oled oledInfo;		//OLED輸出
 POS	posxy;				//計算出來的XY
 float area[4][2]={ {0,0} , {0,3} , {3,0} , {3,3} };//1 3 2 4
 double posX=0,posY=0;
+int areaPosTP=0;
 int areaPos=0;
 int lightSensor;		//讀取光敏電阻數值0~1024
 
@@ -88,6 +90,7 @@ int rssiCount[4]={0};
 int rssiCounter=0;
 int canShowRSSI[4]={0};
 int sureShowRSSI=0;
+int canCulPos[4]={0};
 //-------------------------
 //MQTT Publish
 //-------------------------
@@ -124,7 +127,7 @@ void initFunction();
 int rssiPosition();
 void culLongSide(double *distance);
 void createDistance(double *af_distanceTP,double *bf_distance,int *count);
-
+int findMode(int *sortData,int all);
 //-------------------------
 //俊賢RSSI處理函式
 //-------------------------
@@ -149,7 +152,7 @@ double avgRSSI(double *rssi , double count);//取平均
 //-----------------------------------------------------------------------
 int main(int argc, char *argv[]){	
 	
-	system("/root/project/position/iBeaconScanV1.9/ibeacon_scan4.sh &");	
+	system("/root/project/DB_position/ibeacon_scan4.sh &");	
 	//system("hcitool lescan --duplicates &");
 	sleep(1);
 	initFunction();				//所有init	
@@ -174,6 +177,9 @@ int main(int argc, char *argv[]){
 	double distance2[4]={0,0,0,0};	
 	int count[4]={0};	
     int killsh=0;
+	int posCount=0;
+	int mode;
+	int nextPos[10]={0};
 	while(1){	
 		
 		//printf("I am main thread. i=%d\n", i);	
@@ -184,22 +190,46 @@ int main(int argc, char *argv[]){
 		printf("TXP3:%d\n",TXP[2]);
 		printf("TXP4:%d\n",TXP[3]);
 		*/
-		printf("RSSI1:%f		",RSSI[0]);		
-		printf("RSSI3:%f\n",RSSI[2]);		
-		printf("RSSI2:%f		",RSSI[1]);	
-		printf("RSSI4:%f\n",RSSI[3]);			
+		printf("RSSI2:%f		",RSSI[1]);		
+		printf("RSSI1:%f\n",RSSI[0]);		
+		printf("RSSI4:%f		",RSSI[3]);	
+		printf("RSSI3:%f\n",RSSI[2]);			
 				
-		printf("------------------\n");			
+					
 #endif	
 		if(!sureShowRSSI){
 			if((canShowRSSI[0]+canShowRSSI[1]+canShowRSSI[2]+canShowRSSI[3])==4){
-				sureShowRSSI=1;
+				sureShowRSSI=1;				
 			}
 		}else{
-			pthread_mutex_lock(&mutex);
-			areaPos=rssiPosition();
-			pthread_mutex_unlock(&mutex);
-			printf("areaPos:%d\n",areaPos);
+			int k;	
+				
+			//if((canCulPos[0]+canCulPos[1]+canCulPos[2]+canCulPos[3])==4){
+				//printf("can cul\n");	
+				pthread_mutex_lock(&mutex);
+				if((canCulPos[0]+canCulPos[1]+canCulPos[2]+canCulPos[3])==4){
+					areaPosTP=rssiPosition();
+					for(k=0;k<4;k++){
+						canCulPos[k]=0;
+					}
+				}
+				pthread_mutex_unlock(&mutex);
+				//save next N Pos same as before areaPos						
+				nextPos[posCount]=areaPosTP;	
+				posCount++;				
+				if(posCount==posModeNum){					
+						mode=findMode(nextPos,posModeNum);	//眾數
+						posCount=0;
+						if(areaPos!=mode){
+							areaPos=mode;
+						}					
+				}
+						
+				
+				printf("areaPos:%d\n",areaPos);	
+				printf("-------------------------------------------\n");
+			//}
+			
 		}
 #if 0
 		printf("distance[0]:%f\n",distance[0]);
@@ -230,16 +260,16 @@ int main(int argc, char *argv[]){
 		printf("posX:%f\nposY:%f\n",posX,posY);	
 		printf("------------------\n");	
 #endif		
-		//usleep(1000);	
+		usleep(1000);	
 		//usleep(200000);				
-		sleep(1);
+		//sleep(1);
 		killsh++;
 		//因hcidump --raw相關指令執行若無關掉持續執行，RSSI會越讀越慢，所以採10秒重開一次
-		if(killsh==10){
+		if(killsh==3000){
 			system("killall hcidump");
 			system("killall ibeacon_scan4.sh");
 			printf("----------kill-------------\n");
-			system("/root/project/position/iBeaconScanV1.9/ibeacon_scan4.sh &");	
+			system("/root/project/DB_position/ibeacon_scan4.sh &");	
 			killsh=0;
 		}
 	}	
@@ -272,10 +302,10 @@ void *threadReadRSSI1(void *arg){
 		}
 		dealRSSIandTXP(rk,data);
 
-	rssiDataA(rk,&count,rssi,&start);
+		rssiDataA(rk,&count,rssi,&start);
 
 		fclose(in);	
-		usleep(500000);
+		//usleep(500000);
 		//usleep(100000);
 		//sleep(1);		
 	}
@@ -306,7 +336,7 @@ void *threadReadRSSI2(void *arg){
 	rssiDataA(rk,&count,rssi,&start);	
 
 		fclose(in);	
-		usleep(500000);
+		//usleep(500000);
 		//usleep(100000);
 		//sleep(1);
 		
@@ -338,7 +368,7 @@ void *threadReadRSSI3(void *arg){
 	rssiDataA(rk,&count,rssi,&start);	
 		
 		fclose(in);	
-		usleep(500000);	
+		//usleep(500000);	
 		//usleep(100000);
 			//sleep(1);
 	}
@@ -370,7 +400,7 @@ void *threadReadRSSI4(void *arg){
 	rssiDataA(rk,&count,rssi,&start);	
 	
 		fclose(in);	
-		usleep(500000);	
+		//usleep(500000);	
 		//usleep(100000);
 		//sleep(1);
 	}	
@@ -446,16 +476,18 @@ void *threadOLED(void *arg){
 	oledInfo.rssi[1]=0;
 	oledInfo.rssi[2]=0;
 	oledInfo.rssi[3]=0;
+	oledInfo.area=0;
 	//oledInfo.area=0;
 	//oledInfo.near=nearWhibeacon;
 	//dealOLEDData(&oledInfo);
+	
 	int i;
 	while(1){	
-		//oledInfo.area=0;		
+		oledInfo.area=areaPos;		
 		//oledInfo.near=nearWhibeacon;
 		if(sureShowRSSI){
 			for(i=0;i<4;i++){
-			oledInfo.rssi[i]=RSSI[i]*100;
+			oledInfo.rssi[i]=abs(RSSI[i]);
 			}
 		}		
 		dealOLEDData(&oledInfo);
@@ -655,6 +687,53 @@ void RSSI_BUBSort(double *sortData,int rk,int all){
 //-------------------------
 
 //-------------------------
+//眾數
+//-------------------------
+int findMode(int *modeData,int all){
+	int i,j;
+	int temp;
+	int tempArea;
+	int sc=all;		
+	int area[9]={1,2,3,4,5,6,7,8,9};
+	int mode[9]={0};	
+	//mode
+	for(i=0;i<9;i++){
+		for(j=1;j<sc;j++){
+			if(modeData[i]==(i+1)){
+				mode[i]=mode[i]+1;
+			}
+		}	
+	}	
+	int areaNum=9;
+	for(i=0;i<areaNum;i++){
+    	for(j=0;j<areaNum-i-1;j++){
+      		if(mode[j]<mode[j+1]){
+								
+        		temp = mode[j];				
+      			mode[j]=mode[j+1];
+      			mode[j+1]=temp;
+				
+				tempArea=area[j];
+				area[j]=area[j+1];
+      			area[j+1]=tempArea;
+     		 }
+    	}
+  	}	
+#if 1	
+	printf("眾數排序後:");
+	for(i=0;i<areaNum;i++){
+		printf("%d ",area[i]);
+	}		
+	printf("\n");
+	printf("-----------------------------\n");
+	
+#endif	
+	return area[0];
+}
+//-------------------------
+
+
+//-------------------------
 //RSSI 氣泡排序 找龍珠最靠近哪個IBEACON
 //-------------------------
 int RSSI_BUBSort_iBeacon(double *sortData,int all){ 
@@ -731,6 +810,8 @@ double avgRSSI(double *rssi , double count)
 //RSSI取後處理
 //-------------------------
 void rssiDataA(int rk,int *count,double *rssi,int *start){
+	usleep(300000);	
+	
 	int mid;
 	double avg=0;
 	int cc=*count;
@@ -738,7 +819,10 @@ void rssiDataA(int rk,int *count,double *rssi,int *start){
 	//RSSI[rk]=RSSItemp[rk];	
 	//printf("RSSItemp[%d]:%d\n",rk,RSSItemp[rk]);
 	
-	if(abs(RSSItemp[rk])>10 && RSSItemp[rk]>=-85){
+	if(abs(RSSItemp[rk])>10){
+		if(abs(RSSItemp[rk])>85){
+			RSSItemp[rk]=-85;
+		}
 		rssi[cc]=RSSItemp[rk];		
 		cc++;
 		*count=cc;
@@ -746,6 +830,7 @@ void rssiDataA(int rk,int *count,double *rssi,int *start){
 	}	
 	
 	if(cc==RTQty){	
+		canCulPos[rk]=1;
 		canShowRSSI[rk]=1;
 		cc=0;
 		*count=cc;
@@ -756,7 +841,7 @@ void rssiDataA(int rk,int *count,double *rssi,int *start){
 		int i=0;
 		//int count[4]={0};		
 		//排序後的最小最大值不列入平均
-		for(i=2;i<6;i++){
+		for(i=3;i<7;i++){
 			avg=avg+rssi[i];
 		}
 		avg=avg/4;
@@ -791,13 +876,14 @@ void rssiDataA(int rk,int *count,double *rssi,int *start){
 //-------------------------
 int  rssiPosition(){
 	
-	int rssiHILOWCheck[4]={0};
+	int rssiHILOWCheck[4]={0,0,0,0};
 	int pos=0;
 	double rssiTP[4];
 	int i;
 	int max1=0;
 	int max2=0;
-	int min=0;	
+	int min=0;
+	int range0=-50;	
 	int range1=-58;
 	int range2=-70;
 	int range3=-80;
@@ -805,11 +891,7 @@ int  rssiPosition(){
 	int check=0;
 	int near=0;
 	int breakNear=0;
-	int centerRange=12;
-			/*
-			if(abs(RSSI[1]-5) <82){
-				RSSI[1]=RSSI[1]-5;//for test ibeacon2 RSSI值偏小 加上OFFEST
-			}*/
+	int centerRange=12;			
 	
 		for(i=0;i<4;i++){
 			rssiTP[i]=RSSI[i];
@@ -817,7 +899,7 @@ int  rssiPosition(){
 		RSSI_BUBSort(rssiTP,0,4);
 		
 		for(i=0;i<4;i++){
-			printf("rssiTP[%d]:%f\n",i,rssiTP[i]);			
+			//printf("rssiTP[%d]:%f\n",i,rssiTP[i]);			
 			if(rssiTP[0]==RSSI[i]){		//[0]代表離ibeacon最近 RSSI最大
 				max1=i+1;	
 				printf("max1:%d\n",max1);		
@@ -830,41 +912,71 @@ int  rssiPosition(){
 			if(rssiTP[3]==RSSI[i]){		//[3]代表離ibeacon最遠 RSSI最小
 				min=i+1;
 			}				
-		}	
+		}
 		
-		if(RSSI[max1]>range1){
-				//---------------------------------
-				//再次確認是否龍珠真的最靠近ibeacon
-				switch(max1){
-					case 0:
-						//檢查ibeacon4的對角
-						if(RSSI[3]>=range3 ){
-							breakNear=1;
+		
+		
+		
+		if(RSSI[max1-1]>=range1){
+			printf("表示初步檢查DB靠近IBEACON\n");	
+				if(RSSI[max1-1]<range0){
+						//---------------------------------
+						//再次確認是否龍珠真的最靠近ibeacon
+						switch(max1-1){
+							case 0:
+								//檢查ibeacon4的對角
+								if(RSSI[3]>range3 ){								
+									breakNear=1;
+								}else{
+									breakNear=0;
+									printf("靠近IBEACON1\n");							
+								}
+							break;
+							
+							case 1:
+								//檢查ibeacon2的對角 大於就沒離IBEACON很近
+								if(RSSI[2]>range3 ){	
+									printf("靠近IBEACON2\n");
+									breakNear=1;
+								}
+							break;
+							
+							case 2:
+								//檢查ibeacon3的對角
+								if(RSSI[1]>range3 ){
+									printf("靠近IBEACON3\n");
+									breakNear=1;
+								}
+							break;
+							
+							case 3:
+								//檢查ibeacon4的對角				
+								if(RSSI[0]>range3){
+									printf("靠近IBEACON4\n");
+									breakNear=1;							
+								}
+							break;			
 						}
-					break;
-					
-					case 1:
-						//檢查ibeacon2的對角
-						if(RSSI[2]>=range3 ){
-							printf("IN\n");
-							breakNear=1;
-						}
-					break;
-					
-					case 2:
-						//檢查ibeacon3的對角
-						if(RSSI[1]>=range3 ){
-							breakNear=1;
-						}
-					break;
-					
-					case 3:
-						//檢查ibeacon4的對角				
-						if(RSSI[0]>=range3){
-							breakNear=1;							
-						}
-					break;			
 				}
+				if(!breakNear){
+					//--------------------------
+					//判斷龍珠誰靠近IBEACON 有沒有重複
+					for(i=0;i<4;i++){
+						if(RSSI[i]>=range1){
+							rssiHILOWCheck[i]=1;
+							near=1;				
+						}else{
+							rssiHILOWCheck[i]=0;	
+						}
+						check=check+rssiHILOWCheck[i];			
+					}
+					//--------------------------
+				}else{
+					near=0;
+				}			
+				
+		}else{
+			near=0;
 		}
 
 		//---------------------------------
@@ -879,25 +991,7 @@ int  rssiPosition(){
 			rssiCounter=0;
 		}
 		//--------------------------
-			*/	
-			
-			if(!breakNear){
-				//--------------------------
-				//判斷龍珠誰靠近IBEACON 有沒有重複
-				for(i=0;i<4;i++){
-					if(RSSI[i]>=range1){
-						rssiHILOWCheck[i]=1;
-						near=1;				
-					}else{
-						rssiHILOWCheck[i]=0;	
-					}
-					check=check+rssiHILOWCheck[i];			
-				}
-				//--------------------------
-			}else{
-				near=0;
-			}
-			
+			*/				
 				if(near==1){						
 					nearWhibeacon=max1;
 					//printf("max:%d\n",max1);
@@ -915,7 +1009,8 @@ int  rssiPosition(){
 							pos=0;
 						}
 					}else{
-						//有兩個都大於-RSSI70
+						//有兩個都大於-RSSI near值 檢查對角RSSI最小
+						//即可確定靠近哪個IBEACON
 						if(min==4){
 							pos=3;
 						}else if(min==3){
@@ -936,7 +1031,7 @@ int  rssiPosition(){
 							count++;
 						}							
 					}
-					if(count>3){
+					if(count>=3){
 						pos=5;
 						count=0;
 					}else{
@@ -965,6 +1060,9 @@ int  rssiPosition(){
 	return pos;
 }
 //-------------------------
+
+
+
 
 void culLongSide(double *distance){
 	/*

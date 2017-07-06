@@ -4,10 +4,10 @@
 if [ "$1" == "parse" ]; then
   packet=""
   capturing=""
-  count=0
+ # count=0
   while read line
   do
-    count=$[count + 1]
+    #count=$[count + 1]
     if [ "$capturing" ]; then
       if [[ $line =~ ^[0-9a-fA-F]{2}\ [0-9a-fA-F] ]]; then
         packet="$packet $line"
@@ -42,7 +42,7 @@ if [ "$1" == "parse" ]; then
 #					        if [ $MINOR -eq 2 ]; then
 #			                    echo "$UUID $MAJOR $MINOR $POWER $RSSI"
 #			                fi
-					    echo "$POWER $RSSI" > /root/project/position/datalog/BLE$MINOR.txt
+					    echo "$POWER $RSSI" > /root/project/DB_position/datalog/BLE$MINOR.txt
 						
 					fi		
 										
